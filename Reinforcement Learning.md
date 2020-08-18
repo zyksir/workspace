@@ -82,7 +82,19 @@
   
 - TD Learning: learn from **incomplete** episodes -》 是biased的，不要求episodes终止
 
-  - 根据S选择A，观察得到R和$S^{\prime}$，再根据$S^{\prime}$得到$A^{\prime}$ $Q(S, A) \leftarrow Q(S, A)+\alpha\left(R+\gamma Q\left(S^{\prime}, A^{\prime}\right)-Q(S, A)\right)$
+  - **Sarsa**
+
+    1. 初始化$Q(s, a), S$
+
+    2. 根据$Q(s, a), S$，按照$\epsilon-greedy$策略选择$A$
+
+    3. 如下循环直至S为终止态
+
+       1. 观察$R, S^{\prime}$，并根据$Q(s, a), S^{\prime}$选择$A^{\prime}$
+     2.  $Q(S, A) \leftarrow Q(S, A)+\alpha\left(R+\gamma Q\left(S^{\prime}, A^{\prime}\right)-Q(S, A)\right)$
+       3. $S \leftarrow S^{\prime} ; A \leftarrow A^{\prime}$
+
+       
 
 - off-policy learning
 
@@ -111,6 +123,10 @@
 #### From policy methods to PAC bounds analysis
 
 
+
+
+
+#### Non-Convex Optimisation: Survey and ADAM's Proof
 
 
 
