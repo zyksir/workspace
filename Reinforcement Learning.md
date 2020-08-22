@@ -104,23 +104,49 @@
 
   - offline TD: $V\left(S_{t}\right) \leftarrow V\left(S_{t}\right)+\alpha\left(\frac{\pi\left(A_{t} \mid S_{t}\right)}{\mu\left(A_{t} \mid S_{t}\right)}\left(R_{t+1}+\gamma V\left(S_{t+1}\right)\right)-V\left(S_{t}\right)\right)$
 
-  - Q-Learning: $Q\left(S_{t}, A_{t}\right) \leftarrow Q\left(S_{t}, A_{t}\right)+\alpha\left(R_{t+1}+\gamma Q\left(S_{t+1}, A^{\prime}\right)-Q\left(S_{t}, A_{t}\right)\right)$， $A_{t} \sim \mu\left(\cdot \mid S_{t}\right)$， $A^{\prime} \sim \pi\left(\cdot \mid S_{t+1}\right)$
-    目标策略是贪心的，探索策略是$\epsilon$ -greedy的，则 $ R_{t+1}+\gamma Q\left(S_{t+1}, A^{\prime}\right) =R_{t+1}+\max _{a^{\prime}} \gamma Q\left(S_{t+1}, a^{\prime}\right)$
-    Q 函数可以这么计算：$Q(S, A) \leftarrow Q(S, A)+\alpha\left[R+\gamma \max _{a} Q\left(S^{\prime}, a\right)-Q(S, A)\right]$
+  - **Q-Learning**: 不需要 importance sampling！
+    $Q\left(S_{t}, A_{t}\right) \leftarrow Q\left(S_{t}, A_{t}\right)+\alpha\left(R_{t+1}+\gamma Q\left(S_{t+1}, A^{\prime}\right)-Q\left(S_{t}, A_{t}\right)\right)$， $A_{t} \sim \mu\left(\cdot \mid S_{t}\right)$， $A^{\prime} \sim \pi\left(\cdot \mid S_{t+1}\right)$
+    由于目标策略是贪心的(对应的，探索策略是$\epsilon$ -greedy的)，有$ Q\left(S_{t+1}, A^{\prime}\right) =\max _{a^{\prime}}  Q\left(S_{t+1}, a^{\prime}\right)$，得到：$Q(S, A) \leftarrow Q(S, A)+\alpha\left[R+\gamma \max _{a} Q\left(S^{\prime}, a\right)-Q(S, A)\right]$
+    
+  - Q-learning 算法：对每个 episode，选择初始状态 $S$，根据 $Q$，使用$\epsilon$ -greedy策略选择 $A$，然后观察得到$ R$ 和 $S^{\prime}$，然后更新 $Q(S, A), S \leftarrow S^{\prime} $
 
-- DQN：实际应用的时候，
+-  Deep Q Network(DQN)：目前我们所用到的算法还是基于 lookup table 的算法， 需要我们把所有 state和 action记录下来，这个对于大型 MDP 显然是不可行的，因此我们需要用
+   $\hat{v}(s, \boldsymbol{w}) \approx v_{\pi}(s), \hat{q}(s, a, \boldsymbol{w}) \approx q_{\pi}(s, a)$来估计value function，这就是 DQN
 
-
-
-
-
-
+   - 损失函数可以是$J(\mathbf{w})=\mathbb{E}_{\pi}\left[\left(q_{\pi}(S, A)-\hat{q}(S, A, \mathbf{w})\right)^{2}\right]$，
+   - 如何获得$q_{\pi}(S, A)$ ，对于MC，直接使用$G_t$就好；对于 TD，使用$R_{t+1}+\gamma \hat{q}\left(S_{t+1}, A_{t+1} \mathbf{w}\right)$ ，如果是 Q-learning，$r+\gamma \max _{a^{\prime}} \hat{q}\left(s^{\prime}, a^{\prime}, \mathbf{w}\right)$ 
+   - 使用了experience replay和target network，根据$\epsilon$ -greedy和$Q(s, a ; \mathbf{w})$，将$\left(s_{t}, a_{t}, r_{t+1}, s_{t+1}\right)$存在一个 memory $D$中，然后从$D$中 sample mini-batch ，$\mathscr{L}(\mathbf{w})=\mathbb{E}_{s, a, r, s^{\prime} \sim \mathscr{D}}\left[\left(r+\gamma \max _{a^{\prime}} Q\left(s^{\prime}, a^{\prime} ; \mathbf{w}^{-}\right)-Q(s, a ; \mathbf{w})\right)^{2}\right]$，利用这个来优化$\mathbf{w}$。每隔一定时间令$\mathbf{w}^-=\mathbf{w}$。
+   - $\max _{a^{\prime}} Q\left(s^{\prime}, a^{\prime} ; \mathbf{w}^{-}\right)$ 这一步会导致overestimation，因为$\mathbb{E}\left[\max \left(X_{1}, X_{2}\right)\right] \geq \max \left(\mathbb{E}\left[X_{1}\right], \mathbb{E}\left[X_{2}\right]\right)$ ，为了减少其带来的影响，我们使用 Double DQN，也就是：
+      $\max _{a^{\prime}} Q\left(s^{\prime}, a^{\prime} ; \mathbf{w}^{-}\right)=Q\left(s^{\prime}, \arg \max _{a^{\prime}} Q\left(s^{\prime}, a^{\prime} ; \mathbf{w}^{-}\right) ; \mathbf{w}^{-}\right)$ 
+   - 还有很多其他 DQN 的变种
 
 #### From policy methods to PAC bounds analysis
 
+- Policy Iteration
 
+  1. policy evaluation: $V(s) \leftarrow R(s, \pi(s))+\gamma \sum_{s^{\prime}} \operatorname{Pr}\left(s^{\prime} \mid s, \pi(s)\right) V\left(s^{\prime}\right), \forall s$ 直至收敛
+  2. policy improvement: $\pi(s) \leftarrow \arg \max _{a \in \mathbb{A}} R(s, a)+\gamma \sum_{s^{\prime}} \operatorname{Pr}\left(s^{\prime} \mid s, a\right) V\left(s^{\prime}\right), \forall s$
 
+- **Policy gradient**
 
+  目标函数：$J(\theta)=\sum_{s \in S} d^{\pi}(s) V^{\pi}(s)=\sum_{s \in S} d^{\pi}(s)\left(\sum_{a \in A} \pi_{\theta}(a \mid s) Q^{\pi}(s, a)\right)$ where $d^{\pi}(s):=\lim _{t \rightarrow \infty} p\left(S_{t}=s \mid s_{0}, \pi_{\theta}\right)$ 
+
+  根据Policy gradient theorem， $\nabla_{\theta} J(\theta)$和$\frac{\partial d^{\pi}(s)}{\partial \theta}$无关，故$\nabla_{\theta} J(\theta)=\sum_{s \in S} d^{\pi}(s)\left(\sum_{a \in A} Q^{\pi}(s, a) \nabla_{\theta} \pi_{\theta}(a \mid s)\right)$ )
+  整体算法：
+
+  Sample trajectories $\left\{\tau_{i}\right\}$ with horizon $H$ using $\pi_{\theta}(a \mid s)$
+  $G_{i, t} \leftarrow \sum_{t=t^{\prime}}^{H} \gamma^{t-t^{\prime}} R\left(s_{i, t}, a_{i, t}\right)$
+  $V_{t} \leftarrow \frac{1}{M} \sum_{i=1}^{M} G_{i, t}$ 其引入是为了减少方差
+
+  $A\left(s_{i, t}, a_{i, t}\right) \leftarrow G_{i, t}-V_{t}$ 
+  $\Delta \leftarrow \sum_{i, t} \nabla_{\theta} \log \pi_{\theta}\left(a_{i, t} \mid s_{i, t}\right) A\left(s_{i, t}, a_{i, t}\right)$
+  $\theta \leftarrow \theta+\alpha \Delta$
+
+- PAC：目前讲到的几个算法(Q-learning 和 policy gradient)都涉及sample，那么要 sample 多少才可以呢？
+
+  
+
+- 。
 
 
 
