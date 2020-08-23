@@ -164,11 +164,73 @@
 
 
 
+#### Model-based Reinforcement Learning
 
+- **Why&What  Model-based RL**: DRL has very low data efficiency, one solution is model based RL. we try to build a model to simulate environment and train the policy based on this model. since we don't need to interact with real world, the data efficiency could be improved.
 
+- | Model-free RL                              | Model-based RL                            |
+  | ------------------------------------------ | ----------------------------------------- |
+  | best asymptotic performance                | On-policy learning(once model is learned) |
+  | suitable for DL architecture with big data | higher sample efficiency                  |
+  |                                            |                                           |
+  | Suffer from instabilities of off-policy    | Suffer from model compounding error       |
+  | Very low sample efficiency                 |                                           |
 
+  **Dyna-Q**
 
+  ![4_1](/Users/yikaizhu/github/workspace/pic/4_1.png)
 
+  Initialize $Q(s, a)$ and $M$ odel $(s, a)$ for all $s \in \mathcal{S}$ and $a \in \mathcal{A}(s)$ 
+  Do forever:
+  	(a) $S \leftarrow$ current (nonterminal) state
+  	(b) $A \leftarrow \varepsilon-\operatorname{greedy}(S, Q)$
+  	(c) Execute action $A$; observe resultant reward, $R,$ and state, $S^{\prime}$
+  	(d) $Q(S, A) \leftarrow Q(S, A)+\alpha\left[R+\gamma \max _{a} Q\left(S^{\prime}, a\right)-Q(S, A)\right]$
+  	(e) $\operatorname{Model}(S, A) \leftarrow R, S^{\prime}$ (assuming deterministic environment)
+  	(f) Repeat $n$ times:
+  			$S \leftarrow$ random previously observed state
+  			$A \leftarrow$ random action previously taken in $S$ 
+  			$R, S^{\prime} \leftarrow M$ odel $(S, A)$
+  			$Q(S, A) \leftarrow Q(S, A)+\alpha\left[R+\gamma \max _{a} Q\left(S^{\prime}, a\right)-Q(S, A)\right]$
+
+- Key Questions of Model-based RL
+  - Does the model really help improve the data efficiency?
+  - Inevitably, the model is to-some-extent inaccurate. When to trust the model?
+  - How to properly leverage the model to better train our policy?
+  
+- PETS
+
+  - Basic idea: tries to sample actions that yield high reward
+  - Initialize data $D$ with a random controller for one trial. 
+    **for** Trial $k=1$ to $K$ **do** 
+    	Train a $P E$ dynamics model $\tilde{f}$ given $\mathbb{D}$. 
+    		**for** Time $t=0$ to TaskHorizon **do** 
+    			**for** Actions sampled $a_{t: t+T} \sim \operatorname{CEM}(\cdot), 1$ to $\mathrm{NSamples}$ **do** 
+    				Propagate state particles $s_{\tau}^{p}$ using $T S$ and $f \mid\left\{\mathbb{D}, \boldsymbol{a}_{t: t+T}\right\}$ 
+    				Evaluate actions as $\sum_{\tau=t}^{t+T^{\prime}} \frac{1}{P} \sum_{p=1}^{P} r\left(\boldsymbol{s}_{\tau}^{p}, \boldsymbol{a}_{\tau}\right)$
+    				Update CEM( $\cdot$ ) distribution. 
+    			Execute first action $\boldsymbol{a}_{t}^{*}$ (only) from optimal actions $\boldsymbol{a}_{t: t+T}^{*}$ 
+    			Record outcome: $\mathbb{D} \leftarrow \mathbb{D} \cup\left\{\boldsymbol{s}_{t}, \boldsymbol{a}_{t}^{*}, \boldsymbol{s}_{t+1}\right\} .$
+  - what is $CEM$ : Cross Entropy Method
+    $\operatorname{loss}(\boldsymbol{\theta})=-\sum_{n=1}^{N} \log \tilde{f}_{\boldsymbol{\theta}}\left(\boldsymbol{s}_{n+1} \mid \boldsymbol{s}_{n}, \boldsymbol{a}_{n}\right)$
+    $\tilde{f}=\operatorname{Pr}\left(\boldsymbol{s}_{t+1} \mid \boldsymbol{s}_{t}, \boldsymbol{a}_{t}\right)=\mathcal{N}\left(\boldsymbol{\mu}_{\theta}\left(\boldsymbol{s}_{t}, \boldsymbol{a}_{t}\right), \boldsymbol{\Sigma}_{\theta}\left(\boldsymbol{s}_{t}, \boldsymbol{a}_{t}\right)\right)$
+    Gaussian distribution可以抓住两种不确定性：一种是在未采样区域的不确定性；另一种是采样数据部分的不确定性
+  - Improvement: POPLIN: maintain a policy to sample actions given the current simulated state -> see later in estimation learning
+
+- Theoretic Bound
+
+  - **SLBO**: 
+    - Assumption : $V^{\pi, M^{\star}} \geq V^{\pi, \widehat{M}}-D_{\pi_{\mathrm{ref}}, \delta}(\widehat{M}, \pi), \quad \forall \pi$ s.t. $d\left(\pi, \pi_{\mathrm{ref}}\right) \leq \delta$
+      $\widehat{M}=M^{\star} \Longrightarrow D_{\pi_{\mathrm{ref}}}(\widehat{M}, \pi)=0, \quad \forall \pi, \pi_{\mathrm{ref}} $
+      $D_{\pi_{\mathrm{ref}}}(\widehat{M}, \pi)$ is of the form $\underset{\tau \sim \pi_{\mathrm{ref}}, M^{\star}}{\mathbb{E}}[f(\widehat{M}, \pi, \tau)]$
+      e.g. $D_{\pi_{\text {ref }}}(\widehat{M}, \pi)=L \cdot_{S_{0}, \ldots, S_{t}, \sim \pi_{\text {ref }}, M^{\star}}\left[\left\|\widehat{M}\left(S_{t}\right)-S_{t+1}\right\|\right]$
+    - Theorem based on assumption: 
+      for Algorithm : $\begin{aligned} \pi_{k+1}, M_{k+1}=& \underset{\pi \in \Pi, M \in \mathcal{M}}{\operatorname{argmax}} V^{\pi, M}-D_{\pi_{k}, \delta}(M, \pi) \\ & \text { s.t. } d\left(\pi, \pi_{k}\right) \leq \delta \end{aligned}$
+      
+
+    - 
+  - 
+    
 
 
 
