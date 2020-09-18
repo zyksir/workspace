@@ -65,44 +65,48 @@
 
   - 每个迭代复杂度是$O(m n ^2)$ ，m 是action 数目，n 是 state 数目
 
-- **Monte-Carlo Methods**: 
-  learn from **complete** episodes
-  是unbiased的
-  要求episodes必须终止
+  - 
+  
+##### Monte-Carlo Methods: 
+learn from **complete** episodes
+    是unbiased的
+    要求episodes必须终止
 
   - 给定policy $\pi$ ，和环境交互得到 $S_{1}, A_{1}, R_{2}, \ldots, S_{k} \sim \pi$ ，然后计算rewards: $G_{t}=R_{t+1}+\gamma R_{t+2}+\ldots+\gamma^{T-1} R_{T}$
     我们使用平均值来代替期望，算出 $v_{\pi}(s)$
-
+  
   - evaluation阶段：如果多次经过一个状态，每次：$N(s) \leftarrow N(s)+1, S(s) \leftarrow S(s) + G_t$ ，最后计算$V(s) \leftarrow S(s)/N(s)$，这个过程可以等价为：
     $N\left(s_{t}\right) \leftarrow N\left(s_{t}\right)+1$
     $V\left(s_{t}\right) \leftarrow V\left(s_{t}\right)+\frac{1}{N\left(s_{t}\right)}\left(G_{t}-V\left(s_{t}\right)\right)$
-
+  
     并泛化为：$V\left(s_{t}\right) \leftarrow V\left(s_{t}\right)+\alpha\left(G_{t}-V\left(s_{t}\right)\right)$
-
+  
     评估 $Q$，方式与评估状态相似
     $N\left(S_{t}, A_{t}\right) \leftarrow N\left(S_{t}, A_{t}\right)+1$
     $Q\left(S_{t}, A_{t}\right) \leftarrow Q\left(S_{t}, A_{t}\right)+\frac{1}{N\left(S_{t}, A_{t}\right)}\left(G_{t}-Q\left(S_{t}, A_{t}\right)\right)$
     
   - improvement阶段：$\pi(a \mid s)=\left\{\begin{array}{ll}\epsilon / m+1-\epsilon & \text { if } a^{*}=\underset{a \in \mathscr{A}}{\arg \max } Q(s, a) \\ \epsilon / m  &\text { otherwise }\end{array}\right.$
     只要$\epsilon_{k}=\frac{1}{k}$，就可以保证该策略是GLIE的，即每个state-action对都会被无限次的探索到($\lim _{k \rightarrow \infty} N_{k}(s, a)=\infty$)，且该策略会收敛成贪心策略
-
+  
   - 总体就是：sample-》评估Q函数-》修改policy-》循环
+
+##### Sarsa
 
 - TD Learning: learn from **incomplete** episodes -》 是biased的，不要求episodes终止
 
-  - **Sarsa**
+- Sarsa 伪代码
 
-    1. 初始化$Q(s, a), S$
+  1. 初始化$Q(s, a), S$
 
-    2. 根据$Q(s, a), S$，按照$\epsilon-greedy$策略选择$A$
+  2. 根据$Q(s, a), S$，按照$\epsilon-greedy$策略选择$A$
 
-    3. 如下循环直至S为终止态
+  3. 如下循环直至S为终止态
 
-       1. 观察$R, S^{\prime}$，并根据$Q(s, a), S^{\prime}$选择$A^{\prime}$
-     2.  $Q(S, A) \leftarrow Q(S, A)+\alpha\left(R+\gamma Q\left(S^{\prime}, A^{\prime}\right)-Q(S, A)\right)$
-       3. $S \leftarrow S^{\prime} ; A \leftarrow A^{\prime}$
-
-       
+     1. 观察$R, S^{\prime}$，并根据$Q(s, a), S^{\prime}$选择$A^{\prime}$
+      2. $Q(S, A) \leftarrow Q(S, A)+\alpha\left(R+\gamma Q\left(S^{\prime}, A^{\prime}\right)-Q(S, A)\right)$
+     3. $S \leftarrow S^{\prime} ; A \leftarrow A^{\prime}$
+     
+     
 
 - off-policy learning
 
@@ -116,20 +120,43 @@
 
   - offline TD: $V\left(S_{t}\right) \leftarrow V\left(S_{t}\right)+\alpha\left(\frac{\pi\left(A_{t} \mid S_{t}\right)}{\mu\left(A_{t} \mid S_{t}\right)}\left(R_{t+1}+\gamma V\left(S_{t+1}\right)\right)-V\left(S_{t}\right)\right)$
 
-  - **Q-Learning**: 不需要 importance sampling！
-    $Q\left(S_{t}, A_{t}\right) \leftarrow Q\left(S_{t}, A_{t}\right)+\alpha\left(R_{t+1}+\gamma Q\left(S_{t+1}, A^{\prime}\right)-Q\left(S_{t}, A_{t}\right)\right)$， $A_{t} \sim \mu\left(\cdot \mid S_{t}\right)$， $A^{\prime} \sim \pi\left(\cdot \mid S_{t+1}\right)$
-    由于目标策略是贪心的(对应的，探索策略是$\epsilon$ -greedy的)，有$ Q\left(S_{t+1}, A^{\prime}\right) =\max _{a^{\prime}}  Q\left(S_{t+1}, a^{\prime}\right)$，得到：$Q(S, A) \leftarrow Q(S, A)+\alpha\left[R+\gamma \max _{a} Q\left(S^{\prime}, a\right)-Q(S, A)\right]$
+  
+
+##### Q-Learning
+
+  - $$
+    \begin{aligned}
+    TD_{error} &\leftarrow r_{t+1}+\gamma \max _{a_{t+1}} Q\left(s_{t+1}, a_{t+1}\right)-Q\left(s_{t}, a_{t}\right) \\
+    Q\left(s_{t}, a_{t}\right) &\leftarrow Q\left(s_{t}, a_{t}\right)+\alpha TD_{error}
+    \end{aligned}
+    $$
     
-  - Q-learning 算法：对每个 episode，选择初始状态 $S$，根据 $Q$，使用$\epsilon$ -greedy策略选择 $A$，然后观察得到$ R$ 和 $S^{\prime}$，然后更新 $Q(S, A), S \leftarrow S^{\prime} $
+  - 由于目标策略是贪心的，探索策略是$\epsilon$ -greedy的)，因此这是一个 offline 的策略
+    
+  - 伪码：
 
--  Deep Q Network(DQN)：目前我们所用到的算法还是基于 lookup table 的算法， 需要我们把所有 state和 action记录下来，这个对于大型 MDP 显然是不可行的，因此我们需要用
-   $\hat{v}(s, \boldsymbol{w}) \approx v_{\pi}(s), \hat{q}(s, a, \boldsymbol{w}) \approx q_{\pi}(s, a)$来估计value function，这就是 DQN
+     ```python
+     s_t = env.reset() # init state
+     for t in range(max_episode_length):
+         a_t = policy(s_t)
+         s_t_plus_one, reward, _ = env.step(s_t, a_t)
+         td_error = reward + gamma * max(Q_table[s_t_plus_one]) - Q_table[s_t][a_t]
+         Q_table[s_t][a_t] = Q_table[s_t][a_t] + lr * td_error
+         s_t = s_t_plus_one
+     ```
 
-   - 损失函数可以是$J(\mathbf{w})=\mathbb{E}_{\pi}\left[\left(q_{\pi}(S, A)-\hat{q}(S, A, \mathbf{w})\right)^{2}\right]$，
-   - 如何获得$q_{\pi}(S, A)$ ，对于MC，直接使用$G_t$就好；对于 TD，使用$R_{t+1}+\gamma \hat{q}\left(S_{t+1}, A_{t+1} \mathbf{w}\right)$ ，如果是 Q-learning，$r+\gamma \max _{a^{\prime}} \hat{q}\left(s^{\prime}, a^{\prime}, \mathbf{w}\right)$ 
-   - 使用了experience replay和target network，根据$\epsilon$ -greedy和$Q(s, a ; \mathbf{w})$，将$\left(s_{t}, a_{t}, r_{t+1}, s_{t+1}\right)$存在一个 memory $D$中，然后从$D$中 sample mini-batch ，$\mathscr{L}(\mathbf{w})=\mathbb{E}_{s, a, r, s^{\prime} \sim \mathscr{D}}\left[\left(r+\gamma \max _{a^{\prime}} Q\left(s^{\prime}, a^{\prime} ; \mathbf{w}^{-}\right)-Q(s, a ; \mathbf{w})\right)^{2}\right]$，利用这个来优化$\mathbf{w}$。每隔一定时间令$\mathbf{w}^-=\mathbf{w}$。
-   - $\max _{a^{\prime}} Q\left(s^{\prime}, a^{\prime} ; \mathbf{w}^{-}\right)$ 这一步会导致overestimation，因为$\mathbb{E}\left[\max \left(X_{1}, X_{2}\right)\right] \geq \max \left(\mathbb{E}\left[X_{1}\right], \mathbb{E}\left[X_{2}\right]\right)$ ，为了减少其带来的影响，我们使用 Double DQN，也就是：
-      $\max _{a^{\prime}} Q\left(s^{\prime}, a^{\prime} ; \mathbf{w}^{-}\right)=Q\left(s^{\prime}, \arg \max _{a^{\prime}} Q\left(s^{\prime}, a^{\prime} ; \mathbf{w}^{-}\right) ; \mathbf{w}^{-}\right)$ 
+     
+
+##### Deep Q Network(DQN)：
+
+- 利用神经网络来估计$Q(s_t, a_t)$，而不是用 table 来记录
+
+   - $TD_{error} = \left(r_{t}+\gamma \max _{a_{t+1}} Q^{\operatorname{target}}\left(s_{t+1}, a_{t+1}\right)-Q\left(s_{t}, a_{t}\right)\right)$
+   - 使用了experience replay和target network
+      1. 将$\left(s_{t}, a_{t}, r_{t+1}, s_{t+1}\right)$存在一个 memory $D$中，从$D$中 sample mini-batch 
+      2. $\mathscr{L}(\mathbf{w})=\mathbb{E}_{s_t, a_t, r_t, s_{t+1} \sim \mathscr{D}}\left[\left(r_t+\gamma \max _{a_{t+1}} Q\left(s_{t+1}, a_{t+1} ; \mathbf{w}^{-}\right)-Q(s_t, a_t ; \mathbf{w})\right)^{2}\right]$，利用这个来优化$\mathbf{w}$。每隔$\mathbf{w}^-$不传导梯度，一定时间令$\mathbf{w}^-=\mathbf{w}$。
+   - 变种：$\max _{a_{t+1}} Q\left(s_{t+1}, a_{t+1} ; \mathbf{w}^{-}\right)$ 这一步会导致overestimation，因为$\mathbb{E}\left[\max \left(X_{1}, X_{2}\right)\right] \geq \max \left(\mathbb{E}\left[X_{1}\right], \mathbb{E}\left[X_{2}\right]\right)$ 
+      为了减少其带来的影响，可以使用Double DQN，即 $\max _{a^{\prime}} Q\left(s^{\prime}, a^{\prime} ; \mathbf{w}^{-}\right)=Q\left(s^{\prime}, \arg \max _{a^{\prime}} Q\left(s^{\prime}, a^{\prime} ; \mathbf{w}\right) ; \mathbf{w}^{-}\right)$ 
    - 还有很多其他 DQN 的变种
 
 #### From policy methods to PAC bounds analysis
@@ -139,26 +166,31 @@
   1. policy evaluation: $V(s) \leftarrow R(s, \pi(s))+\gamma \sum_{s^{\prime}} \operatorname{Pr}\left(s^{\prime} \mid s, \pi(s)\right) V\left(s^{\prime}\right), \forall s$ 直至收敛
   2. policy improvement: $\pi(s) \leftarrow \arg \max _{a \in \mathbb{A}} R(s, a)+\gamma \sum_{s^{\prime}} \operatorname{Pr}\left(s^{\prime} \mid s, a\right) V\left(s^{\prime}\right), \forall s$
 
-- **Policy gradient**
+##### Policy gradient
 
-  目标函数：$J(\theta)=\sum_{s \in S} d^{\pi}(s) V^{\pi}(s)=\sum_{s \in S} d^{\pi}(s)\left(\sum_{a \in A} \pi_{\theta}(a \mid s) Q^{\pi}(s, a)\right)$ where $d^{\pi}(s):=\lim _{t \rightarrow \infty} p\left(S_{t}=s \mid s_{0}, \pi_{\theta}\right)$ 
+- 我们希望最大化目标函数：$J(\theta)=\sum_{s \in S} d^{\pi}(s) V^{\pi}(s)=\sum_{s \in S} d^{\pi}(s)\left(\sum_{a \in A} \pi_{\theta}(a \mid s) Q^{\pi}(s, a)\right)$ 
+  其中 $d^{\pi}(s):=\lim _{t \rightarrow \infty} p\left(S_{t}=s \mid s_{0}, \pi_{\theta}\right)$ 是马尔可夫链的极限分布
 
-  根据Policy gradient theorem， $\nabla_{\theta} J(\theta)$和$\frac{\partial d^{\pi}(s)}{\partial \theta}$无关，故$\nabla_{\theta} J(\theta)=\sum_{s \in S} d^{\pi}(s)\left(\sum_{a \in A} Q^{\pi}(s, a) \nabla_{\theta} \pi_{\theta}(a \mid s)\right)$ )
-  整体算法：
+- 根据Policy gradient theorem， $\nabla_{\theta} J(\theta)=\sum_{s \in S} d^{\pi}(s)\left(\sum_{a \in A} Q^{\pi}(s, a) \nabla_{\theta} \pi_{\theta}(a \mid s)\right)$ 
+  $$
+  \begin{aligned}
+  \nabla_{\theta} V^{\pi}\left(s_{0}\right) & =\sum_{s \in S} d^{\pi}(s) \sum_{a \in A}\left(Q^{\pi}(s, a) \nabla_{\theta} \pi_{\theta}(a \mid s)\right) \\
+  & \propto \sum_{s \in S} \mu(s) \sum_{a \in A}\left(\pi_{\theta}(a \mid s) Q^{\pi}(s, a) \frac{\nabla_{\theta} \pi_{\theta}(a \mid s)}{\pi_{\theta}(a \mid s)}\right) \\
+  & =E_{s \sim \mu, a \sim \pi}\left[Q^{\pi}(s, a) \nabla_{\theta} \ln \pi_{\theta}(a \mid s)\right] \\
+  & =\mathrm{E}_{s \sim \mu, a \sim \pi}\left[G_{t} \nabla_{\theta} \ln \pi_{\theta}(a \mid s)\right]
+  \end{aligned}
+  $$
 
-  Sample trajectories $\left\{\tau_{i}\right\}$ with horizon $H$ using $\pi_{\theta}(a \mid s)$
-  $G_{i, t} \leftarrow \sum_{t=t^{\prime}}^{H} \gamma^{t-t^{\prime}} R\left(s_{i, t}, a_{i, t}\right)$
-  $V_{t} \leftarrow \frac{1}{M} \sum_{i=1}^{M} G_{i, t}$ 其引入是为了减少方差
-
-  $A\left(s_{i, t}, a_{i, t}\right) \leftarrow G_{i, t}-V_{t}$ 
-  $\Delta \leftarrow \sum_{i, t} \nabla_{\theta} \log \pi_{\theta}\left(a_{i, t} \mid s_{i, t}\right) A\left(s_{i, t}, a_{i, t}\right)$
-  $\theta \leftarrow \theta+\alpha \Delta$
-
+- 伪码：
+  
+  1. Sample trajectories $\left\{\tau_{i}\right\}$ with horizon $H$ using $\pi_{\theta}(a \mid s)$
+     $G_{i, t} \leftarrow \sum_{t=t^{\prime}}^{H} \gamma^{t-t^{\prime}} R\left(s_{i, t}, a_{i, t}\right)$
+     $V_{t} \leftarrow \frac{1}{M} \sum_{i=1}^{M} G_{i, t}$ 其引入是为了减少方差
+     $A\left(s_{i, t}, a_{i, t}\right) \leftarrow G_{i, t}-V_{t}$ 
+     $\Delta \leftarrow \sum_{i, t} \nabla_{\theta} \log \pi_{\theta}\left(a_{i, t} \mid s_{i, t}\right) A\left(s_{i, t}, a_{i, t}\right)$
+     $\theta \leftarrow \theta+\alpha \Delta$
 - PAC：目前讲到的几个算法(Q-learning 和 policy gradient)都涉及sample，那么要 sample 多少才可以呢？
 
-  
-
-- 。
 
 #### Non-Convex Optimisation: Survey and ADAM's Proof
 
@@ -178,7 +210,7 @@
 
   **Dyna-Q**
 
-  ![4_1](/Users/yikaizhu/github/workspace/pic/4_1.png)
+  ![4_1](./pic/4_1.png)
 
   Initialize $Q(s, a)$ and $M$ odel $(s, a)$ for all $s \in \mathcal{S}$ and $a \in \mathcal{A}(s)$ 
   Do forever:
@@ -226,9 +258,8 @@
       e.g. $D_{\pi_{\text {ref }}}(\widehat{M}, \pi)=L \cdot_{S_{0}, \ldots, S_{t}, \sim \pi_{\text {ref }}, M^{\star}}\left[\left\|\widehat{M}\left(S_{t}\right)-S_{t+1}\right\|\right]$
     - Theorem based on assumption: 
       for Algorithm : $\begin{aligned} \pi_{k+1}, M_{k+1}=& \underset{\pi \in \Pi, M \in \mathcal{M}}{\operatorname{argmax}} V^{\pi, M}-D_{\pi_{k}, \delta}(M, \pi) \\ & \text { s.t. } d\left(\pi, \pi_{k}\right) \leq \delta \end{aligned}$
-      
-
-    - 
+  
+- 
   - 
     
 
