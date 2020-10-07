@@ -252,18 +252,79 @@ learn from **complete** episodes
 - Theoretic Bound
 
   - **SLBO**: 
+    
     - Assumption : $V^{\pi, M^{\star}} \geq V^{\pi, \widehat{M}}-D_{\pi_{\mathrm{ref}}, \delta}(\widehat{M}, \pi), \quad \forall \pi$ s.t. $d\left(\pi, \pi_{\mathrm{ref}}\right) \leq \delta$
       $\widehat{M}=M^{\star} \Longrightarrow D_{\pi_{\mathrm{ref}}}(\widehat{M}, \pi)=0, \quad \forall \pi, \pi_{\mathrm{ref}} $
-      $D_{\pi_{\mathrm{ref}}}(\widehat{M}, \pi)$ is of the form $\underset{\tau \sim \pi_{\mathrm{ref}}, M^{\star}}{\mathbb{E}}[f(\widehat{M}, \pi, \tau)]$
-      e.g. $D_{\pi_{\text {ref }}}(\widehat{M}, \pi)=L \cdot_{S_{0}, \ldots, S_{t}, \sim \pi_{\text {ref }}, M^{\star}}\left[\left\|\widehat{M}\left(S_{t}\right)-S_{t+1}\right\|\right]$
+      $D_{\pi_{\mathrm{ref}}}(\widehat{M}, \pi)$ is of the form $\underset{\tau \sim \pi_{\mathrm{ref}}, M^{\star}}{\mathbb{E}}[f(\widehat{M}, \pi, \tau)]$ e.g. $D_{\pi_{\text {ref }}}(\widehat{M}, \pi)=L \cdot_{S_{0}, \ldots, S_{t}, \sim \pi_{\text {ref }}, M^{\star}}\left[\left\|\widehat{M}\left(S_{t}\right)-S_{t+1}\right\|\right]$
+      
     - Theorem based on assumption: 
+<<<<<<< HEAD:算法/RL Learning/Reinforcement Learning.md
       for Algorithm : $\begin{aligned} \pi_{k+1}, M_{k+1}=& \underset{\pi \in \Pi, M \in \mathcal{M}}{\operatorname{argmax}} V^{\pi, M}-D_{\pi_{k}, \delta}(M, \pi) \\ & \text { s.t. } d\left(\pi, \pi_{k}\right) \leq \delta \end{aligned}$
   
 - 
   - 
+=======
+      for Algorithm(TRPO) : $\begin{aligned} \pi_{k+1}, M_{k+1}=& \underset{\pi \in \Pi, M \in \mathcal{M}}{\operatorname{argmax}} V^{\pi, M}-D_{\pi_{k}, \delta}(M, \pi) \\ & \text { s.t. } d\left(\pi, \pi_{k}\right) \leq \delta \end{aligned}$
+  
+    $V^{\pi_{0}, M^{\star}} \leq V^{\pi_{1}, M^{\star}} \leq \cdots \leq V^{\pi_{T}, M^{\star}}$
+      
+    - 算法：
+      Initialize model network parameters $\phi$ and policy network parameters $\theta$ 
+      Initialize dataset $\mathcal{D} \leftarrow \emptyset$ 
+          for $n_{\text {outer }}$ iterations do
+              $\mathcal{D} \leftarrow \mathcal{D} \cup\left\{\right.$ collect $n_{\text {collect }}$ samples from real environment using $\pi_{\theta}$ with noises $\}$ 
+              for $n_{\text {inner }}$ iterations do
+                  for $n_{\text {model }}$ iterations do 
+                      optimize (6.1) over $\phi$ with sampled data from $\mathcal{D}$ by one step of Adam
+                  for $n_{\text {policy }}$ iterations do 
+                      $\mathcal{D}^{\prime} \leftarrow\left\{\right.$ collect $n_{\text {trpo }}$ samples using $\widehat{M}_{\phi}$ as dynamics $\}$ 
+                      optimize $\pi_{\theta}$ by running TRPO on $\mathcal{D}^{\prime}$
     
+      Model optimization loss： $\mathcal{L}_{\phi}^{(H)}\left(\left(s_{t: t+h}, a_{t: t+h}\right) ; \phi\right)=\frac{1}{H} \sum_{i=1}^{H}\left\|\left(\hat{s}_{t+i}-\hat{s}_{t+i-1}\right)-\left(s_{t+i}-s_{t+i-1}\right)\right\|_{2}$
+      Policy optimization target： $\max _{\phi, \theta} \quad V^{\pi_{\theta}, \operatorname{sg}\left(\widehat{M}_{\phi}\right)}-\lambda_{\left(s_{t: t+h}, a_{t: t+h}\right) \sim \pi_{k}, M^{\star}} \mathbb{E}\left[\mathcal{L}_{\phi}^{(H)}\left(\left(s_{t: t+h}, a_{t: t+h}\right) ; \phi\right)\right]$
+    
+    - 补充1：$\pi_{ref}$是使用采样数据的policy，$\hat{}$代表虚拟环境
+    
+    - 补充2：这里有一个很强的假设，$\hat{M}$可以取到$M$，当虚拟模型不太准确的时候，其带来的误差会很大
+    
+  - MBPO：最大的贡献就是研究了该向前模拟几步，核心和Dyna很像
+    
+    - $\eta[\pi] \geq \eta^{\mathrm{branch}}[\pi]-2 r_{\max }\left[\frac{\gamma^{k+1} \epsilon_{\pi}}{(1-\gamma)^{2}}+\frac{\gamma^{k}+2}{(1-\gamma)} \epsilon_{\pi}+\frac{k}{1-\gamma}\left(\epsilon_{m}+2 \epsilon_{\pi}\right)\right]$
+      每次迭代之后policy变化量：$\epsilon_{\pi}=\max _{s} D_{T V}\left(\pi \| \pi_{D}\right)$
+      每次迭代之后model变化量：$\epsilon_{m}=\max _{t} \mathbb{E}_{s \sim \pi_{D, t}}\left[D_{T V}\left(p\left(s^{\prime}, r \mid s, a\right) \| p_{\theta}\left(s^{\prime}, r \mid s, a\right)\right)\right]$
+      通过这里定理，求导，我们很卑微的发现k=0的时候lower bound取到最大值，也就是说
+>>>>>>> cff7417afa57c03dbb6f572eb17a99c06b5ec7fc:Reinforcement Learning.md
+    
+    - 修改使用新的model变化量：$\epsilon_{m^{\prime}}=\max _{t} \mathbb{E}_{s \sim \pi_{t}}\left[D_{T V}\left(p\left(s^{\prime}, r \mid s, a\right) \| p_{\theta}\left(s^{\prime}, r \mid s, a\right)\right)\right]$，则
+      $\eta[\pi] \geq \eta^{\mathrm{branch}}[\pi]-2 r_{\max }\left[\frac{\gamma^{k+1} \epsilon_{\pi}}{(1-\gamma)^{2}}+\frac{\gamma^{k} \epsilon_{\pi}}{(1-\gamma)}+\frac{k}{1-\gamma}\left(\epsilon_{m^{\prime}}\right)\right]$ ，现在求导，当$\frac{\mathrm{d} \epsilon_{m^{\prime}}}{\mathrm{d} \epsilon_{\pi}}$ 足够小的时候(现实中他们的确足够小)，k是大于0的。这样说明，在一定范围内(前k步)，我们是可以相信这个model的。
+    
+    - 算法：
+    
+      Initialize policy $\pi_{\phi},$ predictive model $p_{\theta},$ environment dataset $\mathcal{D}_{\text {env }},$ model dataset $\mathcal{D}_{\text {model }}$ 
+      for $N$ epochs do 
+      	Train model $p_{\theta}$ on $\mathcal{D}_{\text {env }}$ via maximum likelihood 
+      	for $E$ steps do 
+      		Take action in environment according to $\pi_{\phi}$; add to $\mathcal{D}_{\text {env }}$ 
+      		for $M$ model rollouts do 
+      			Sample $s_{t}$ uniformly from $\mathcal{D}_{\text {env }}$ 
+      			Perform $k$ -step model rollout starting from $s_{t}$ using policy $\pi_{\phi} ;$ add to $\mathcal{D}_{\text {model }}$ 
+      		for $G$ gradient updates do 
+      			Update policy parameters on model data: $\phi \leftarrow \phi-\lambda_{\pi} \hat{\nabla}_{\phi} J_{\pi}\left(\phi, \mathcal{D}_{\text {model }}\right)$
+    
+    - 补充：为啥使用TV distance而不是KL divergence，因为前者满足三角不等式
+    
+    - MBPO和SLBO的差别：前者使用TRPO训练，后者使用SSA训练；前者交替的训练model和policy，后者把model训练好之后再训练policy
+  
+-  Backpropagation through paths
+
+  - 之后的a
 
 
+
+#### Control as Inference
+
+- probabilistic graphical models
+- 
 
 
 
